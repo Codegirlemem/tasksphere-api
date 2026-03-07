@@ -1,13 +1,11 @@
 import { Request, Response, NextFunction } from "express";
-import AppError from "../utils/appError.utils.js";
+import jwt from "jsonwebtoken";
 import { ZodError, z } from "zod";
+import AppError from "../utils/appError.utils.js";
 
 import { CapitalizeFirstLetter } from "../utils/capitaliseWord.js";
-import {
-  JsonWebTokenError,
-  NotBeforeError,
-  TokenExpiredError,
-} from "jsonwebtoken";
+
+const { JsonWebTokenError, NotBeforeError, TokenExpiredError } = jwt;
 
 const globalErrorMiddleware = (
   err: any,
