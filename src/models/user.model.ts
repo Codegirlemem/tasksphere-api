@@ -27,6 +27,8 @@ const userSchema = new Schema(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
     methods: {
       async comparePassword(enteredPassword: string) {
         return bcrypt.compare(enteredPassword, this.password);
@@ -34,6 +36,21 @@ const userSchema = new Schema(
     },
   },
 );
+
+userSchema.virtual("totalTasks", {
+  ref: "Task",
+  localField: "_id",
+  foreignField: "user",
+  count: true,
+});
+
+userSchema.virtual("completedTasks", {
+  ref: "Task",
+  localField: "_id",
+  foreignField: "user",
+  match: { isCompleted: true },
+  count: true,
+});
 
 userSchema.pre("save", async function () {
   if (this.isModified("password")) {

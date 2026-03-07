@@ -1,6 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import AppError from "../utils/appError.utils.js";
 import { ZodError, z } from "zod";
+import {
+  JsonWebTokenError,
+  NotBeforeError,
+  TokenExpiredError,
+} from "jsonwebtoken";
+
+import { CapitalizeFirstLetter } from "../utils/capitaliseWord.js";
 
 const globalErrorMiddleware = (
   err: any,
@@ -26,22 +33,37 @@ const globalErrorMiddleware = (
     });
   }
 
-  if (err.code === 11000 && err.keyPattern?.email) {
-    return res.status(400).json({
+  if (
+    err instanceof JsonWebTokenError ||
+    err instanceof TokenExpiredError ||
+    err instanceof NotBeforeError
+  ) {
+    return res.status(401).json({
       success: false,
-      message: "User already exists",
+      message: "Invalid or expired token",
     });
   }
+
+  if (err.code === 11000) {
+    const field = Object.values(err.keyValue)[0] as string;
+
+    return res.status(400).json({
+      success: false,
+      message: `${CapitalizeFirstLetter(field)} already exists`,
+    });
+  }
+
   if (err.name === "ValidationError") {
-    // Extract just the messages
     const messages = Object.values(err.errors).map((err: any) => {
       const path = err.path;
       const name = err.name;
-      if (err.name === "CastError") {
-        return `Invalid input type for field ${err.path}`;
+
+      if (name === "CastError") {
+        return `Invalid input type for field ${path}`;
       }
       return err.message;
     });
+
     return res.status(400).json({
       success: false,
       message: "Validation Error",

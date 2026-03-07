@@ -31,17 +31,15 @@ export const loginUser = async (
   next: NextFunction,
 ) => {
   try {
-    const loginInfo = loginZodSchema.parse(req.body);
+    const { email, password } = loginZodSchema.parse(req.body);
 
-    const foundUser = await UserModel.findOne({
-      email: loginInfo.email,
-    }).select("+password");
+    const foundUser = await UserModel.findOne({ email }).select("+password");
 
     if (!foundUser) {
       return next(new AppError("Invalid credentials", 401));
     }
 
-    const isValid = await foundUser.comparePassword(loginInfo.password);
+    const isValid = await foundUser.comparePassword(password);
 
     if (!isValid) {
       return next(new AppError("Invalid credentials", 401));

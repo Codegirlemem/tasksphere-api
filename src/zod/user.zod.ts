@@ -32,7 +32,15 @@ export const loginZodSchema = userZodSchema.pick({
   password: true,
 });
 
-export const updateUserSchema = z.strictObject({
-  username: usernameInputSchema.optional(),
-  password: passwordInputSchema.optional(),
-});
+export const updateUserSchema = userZodSchema
+  .omit({ email: true })
+  .partial()
+  .refine(
+    (data) =>
+      Object.values(data).some(
+        (value) => value !== undefined && value !== null && value !== "",
+      ),
+    {
+      message: "At least one field must be provided",
+    },
+  );
