@@ -82,7 +82,7 @@ export const deleteUser = async (
       sameSite: "lax",
     });
 
-    return res.status(204).json({
+    return res.status(200).json({
       success: true,
       message: "Profile deleted successfully",
     });

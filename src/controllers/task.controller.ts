@@ -159,7 +159,7 @@ export const deleteTask = async (
     if (!task)
       return next(new AppError("Task not found or already deleted", 404));
 
-    res.status(204).json({
+    return res.status(200).json({
       success: true,
       message: "Task deleted successfully",
     });
