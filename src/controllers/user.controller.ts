@@ -21,7 +21,7 @@ export const getUserProfile = async (
       return next(new AppError("User not found", 404));
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Profile retrieved successfully",
       data: user,
@@ -51,7 +51,7 @@ export const updateUser = async (
     user.set(updates);
     user = await user.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Profile updated successfully",
       data: user,
@@ -82,9 +82,10 @@ export const deleteUser = async (
       sameSite: "lax",
     });
 
-    return res
-      .status(204)
-      .json({ success: true, message: "Profile deleted successfully" });
+    return res.status(204).json({
+      success: true,
+      message: "Profile deleted successfully",
+    });
   } catch (error) {
     next(error);
   }

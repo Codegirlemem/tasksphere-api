@@ -9,6 +9,41 @@ import TaskModel from "../models/task.model.js";
 import AppError from "../utils/appError.utils.js";
 import { objectIdSchema } from "../zod/user.zod.js";
 
+export const getMyTasks = async (
+  req: UserRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!req.user) return next(new AppError("Access denied", 401));
+
+    const { category, isCompleted } = queryFilterShema.parse(req.query);
+    const queryFilters: Record<string, unknown> = { user: req.user._id };
+
+    if (category) {
+      queryFilters.category = category.toLowerCase();
+    }
+
+    if (isCompleted !== undefined) {
+      queryFilters.isCompleted = isCompleted;
+    }
+
+    const tasks = await TaskModel.find(queryFilters)
+      .select("-__v")
+      .sort({ deadline: 1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      count: tasks.length,
+      message: "Tasks retrieved successfully",
+      data: tasks,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createTask = async (
   req: UserRequest,
   res: Response,
@@ -22,15 +57,18 @@ export const createTask = async (
     const cleanedData = Object.fromEntries(
       Object.entries(validatedData).filter(([_, val]) => val != null),
     );
+
     const task = await TaskModel.create({
       ...cleanedData,
       user: req.user._id,
     });
 
+    const { __v, user, ...myTask } = task.toObject();
+
     res.status(201).json({
       success: true,
       message: "Task created successfully",
-      data: task,
+      data: myTask,
     });
   } catch (error) {
     next(error);
@@ -58,7 +96,9 @@ export const updateTask = async (
       { _id: taskId, user: req.user._id },
       cleanedUpdate,
       { runValidators: true, returnDocument: "after" },
-    );
+    )
+      .select("-__v")
+      .lean();
 
     if (!updatedTask) return next(new AppError("Task not found", 404));
 
@@ -66,40 +106,6 @@ export const updateTask = async (
       success: true,
       message: "Task updated successfully",
       data: updatedTask,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getMyTasks = async (
-  req: UserRequest,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    if (!req.user) return next(new AppError("Access denied", 401));
-
-    const { category, isCompleted } = queryFilterShema.parse(req.query);
-    const queryFilters: Record<string, unknown> = { user: req.user._id };
-
-    if (category) {
-      queryFilters.category = category.toLowerCase();
-    }
-
-    if (isCompleted !== undefined) {
-      queryFilters.isCompleted = isCompleted;
-    }
-
-    const tasks = await TaskModel.find(queryFilters)
-      .sort({ deadline: 1 })
-      .lean();
-
-    res.status(200).json({
-      success: true,
-      count: tasks.length,
-      message: "Tasks retrieved successfully",
-      data: tasks,
     });
   } catch (error) {
     next(error);
@@ -119,7 +125,9 @@ export const getTaskById = async (
     const task = await TaskModel.findOne({
       _id: taskId,
       user: req.user._id,
-    }).lean();
+    })
+      .select("-__v")
+      .lean();
 
     if (!task) return next(new AppError("Task not found", 404));
 

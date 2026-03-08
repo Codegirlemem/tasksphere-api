@@ -6,6 +6,7 @@ export const taskSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      select: false,
     },
     title: {
       type: String,
